@@ -15,6 +15,10 @@ RUN groupadd -g ${GID} piuser && \
 # Install the Pi coding agent globally (as root so it goes to /usr/local/bin)
 RUN npm install -g @mariozechner/pi-coding-agent
 
+# Copy default config (host volume mount overrides at runtime)
+RUN mkdir -p /home/piuser/.pi/agent
+COPY --chown=piuser:piuser config/settings.json /home/piuser/.pi/agent/settings.json
+
 # Switch away from root to your matched user!
 USER piuser
 WORKDIR /workspace
