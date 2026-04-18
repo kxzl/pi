@@ -40,8 +40,11 @@ RUN curl -sSL https://github.com/ast-grep/ast-grep/releases/download/0.42.1/app-
     chmod 755 /usr/local/bin/sg && \
     rm /tmp/sg.zip
 
+# Install Kagi CLI for fast web search
+RUN npm install -g kagi-cli
+
 # Install the Pi coding agent and extensions globally (as root)
-RUN npm install -g @mariozechner/pi-coding-agent @0xkobold/pi-ollama
+RUN npm install -g @mariozechner/pi-coding-agent @0xkobold/pi-ollama @ollama/pi-web-search
 
 # Install Playwright and download Chromium with all required system dependencies.
 # PLAYWRIGHT_BROWSERS_PATH puts binaries in a world-readable location.

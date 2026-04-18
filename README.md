@@ -18,7 +18,7 @@ A secure, isolated Docker harness for the [Pi terminal coding agent](https://www
 docker build --build-arg UID=$(id -u) --build-arg GID=$(id -g) -t pi-agent .
 
 # 2. Add this alias to your ~/.bashrc (one-time)
-alias pi='docker run -it --rm --network host -v "$(pwd):/workspace" -v "$HOME/.pi:/home/piuser/.pi" pi-agent'
+alias pi='docker run -it --rm --network host -v "$(pwd):/workspace" -v "$HOME/.pi:/home/piuser/.pi" -e KAGI_API_KEY="${KAGI_API_KEY}" pi-agent'
 
 # 3. Run from any project directory
 pi
