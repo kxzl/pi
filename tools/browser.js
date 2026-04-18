@@ -4,6 +4,10 @@
 // Usage (via bash tool):
 //   node /usr/local/lib/browser.js '<json>'
 //
+// Modes:
+//   headed (default)  — connects to the live VNC browser via CDP
+//   headless          — launches a silent browser (add "headless": true to any command)
+//
 // Actions:
 //   navigate  {url}                  Go to URL, returns title + url
 //   screenshot {path?}               Save PNG (default /tmp/screenshot.png)
@@ -16,21 +20,37 @@
 
 const { chromium } = require('playwright');
 
+const HEADLESS_PROFILE = '/home/piuser/.pi/browser-headless-profile';
+
 async function run() {
   const cmd = JSON.parse(process.argv[2] || '{}');
+  const headless = !!cmd.headless;
 
-  let browser;
-  try {
-    browser = await chromium.connectOverCDP('http://localhost:9222');
-  } catch {
-    out({ ok: false, error: 'Browser not reachable — is the container running with browser support?' });
-    return;
-  }
-
-  // Use the most recently active page, or open a new tab
+  let cleanup;
   let page;
-  const allPages = browser.contexts().flatMap(c => c.pages());
-  page = allPages.length > 0 ? allPages[allPages.length - 1] : await browser.newPage();
+
+  if (headless) {
+    // Silent mode: own Playwright context, no VNC, persistent profile
+    const ctx = await chromium.launchPersistentContext(HEADLESS_PROFILE, {
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    });
+    const pages = ctx.pages();
+    page = pages.length > 0 ? pages[0] : await ctx.newPage();
+    cleanup = () => ctx.close();
+  } else {
+    // Headed mode: connect to the running VNC browser via CDP
+    let browser;
+    try {
+      browser = await chromium.connectOverCDP('http://localhost:9222');
+    } catch {
+      out({ ok: false, error: 'Browser not reachable — is the container running with browser support?' });
+      return;
+    }
+    const allPages = browser.contexts().flatMap(c => c.pages());
+    page = allPages.length > 0 ? allPages[allPages.length - 1] : await browser.newPage();
+    cleanup = () => browser.disconnect();
+  }
 
   let result;
   try {
@@ -87,7 +107,7 @@ async function run() {
     result = { ok: false, error: err.message };
   }
 
-  await browser.disconnect();
+  await cleanup();
   out(result);
 }
 
