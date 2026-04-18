@@ -7,10 +7,16 @@ description: Control the live Chromium browser running in this container. Use fo
 
 Controls the headed Chromium browser in this container. The session is always visible at **http://localhost:6080/vnc.html**.
 
-## Invoke
+## IMPORTANT: This is NOT a tool. Use the bash tool to invoke browser commands.
 
+**WRONG** — do NOT call "browser" as a tool:
+```
+browser({"action": "navigate", "url": "https://example.com"})
+```
+
+**RIGHT** — use the bash tool with this command:
 ```bash
-node /usr/local/lib/browser.js '<json>'
+node /usr/local/lib/browser.js '{"action":"navigate","url":"https://example.com"}'
 ```
 
 All actions return JSON with `{"ok": true, ...}` on success or `{"ok": false, "error": "..."}` on failure.

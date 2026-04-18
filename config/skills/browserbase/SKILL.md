@@ -9,10 +9,16 @@ Silent headless browser for automated research. Invisible to VNC — does not di
 
 Add `"headless": true` to any `browser.js` command to run silently.
 
-## Invoke
+## IMPORTANT: This is NOT a tool. Use the bash tool to invoke browser commands.
 
+**WRONG** — do NOT call "browserbase" as a tool:
+```
+browserbase({"action": "fetch", "url": "https://example.com"})
+```
+
+**RIGHT** — use the bash tool with this command:
 ```bash
-node /usr/local/lib/browser.js '{"headless": true, "action": "...", ...}'
+node /usr/local/lib/browser.js '{"headless": true, "action":"navigate","url":"https://example.com"}'
 ```
 
 ## Common Research Workflows
