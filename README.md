@@ -52,6 +52,38 @@ Key settings:
 - `compaction` — auto-compresses context to keep small models focused
 - `packages` — extensions to auto-install (currently: Ollama integration + web search)
 
+## Live Browser
+
+The container runs a headed Chromium browser on a virtual display. Watch it live from your host:
+
+1. Start the container as usual (`pi`)
+2. Open **http://localhost:6080/vnc.html** in your host browser
+3. You'll see the Chromium window — it updates in real time as the agent browses
+
+The agent controls the browser via the `bash` tool:
+
+```bash
+# Navigate to a URL
+node /usr/local/lib/browser.js '{"action":"navigate","url":"https://example.com"}'
+
+# Take a screenshot (saved to /tmp/screenshot.png)
+node /usr/local/lib/browser.js '{"action":"screenshot"}'
+
+# Get visible page text
+node /usr/local/lib/browser.js '{"action":"text"}'
+
+# Click an element
+node /usr/local/lib/browser.js '{"action":"click","selector":"button.submit"}'
+
+# Fill an input
+node /usr/local/lib/browser.js '{"action":"fill","selector":"#search","value":"hello"}'
+
+# Run JavaScript
+node /usr/local/lib/browser.js '{"action":"evaluate","script":"document.title"}'
+```
+
+Available actions: `navigate`, `screenshot`, `click`, `fill`, `evaluate`, `text`, `back`, `forward`
+
 ## Tools
 
 Built-in: `read`, `write`, `edit`, `bash`, `grep`, `find`, `ls`
