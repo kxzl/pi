@@ -4,36 +4,40 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Custom Dockerized harness for the [Pi terminal coding agent](https://www.npmjs.com/package/@mariozechner/pi-coding-agent) (`@mariozechner/pi-coding-agent`). The goal is a secure, isolated container with local LLM support (Ollama) and web search.
+Custom Dockerized harness for the [Pi terminal coding agent](https://www.npmjs.com/package/@mariozechner/pi-coding-agent) (`@mariozechner/pi-coding-agent`). Provides a secure container with Ollama local LLM support, Kagi/Ollama web search, live Chromium browser, and bundled coding skills.
 
 ## Build & Run
 
 ```bash
-# Build the Docker image (passes host UID/GID to avoid root-owned files)
-docker build --build-arg UID=$(id -u) --build-arg GID=$(id -g) -t pi-agent .
+# Automated install (builds image, configures alias, optional API keys)
+./install.sh
 
-# Run (typically via the `pi` alias defined in ~/.bashrc)
+# Or manually:
+docker build --build-arg UID=$(id -u) --build-arg GID=$(id -g) -t pi-agent .
 docker run -it --rm --network host \
   -v "$(pwd):/workspace" \
   -v "$HOME/.pi:/home/piuser/.pi" \
+  -e KAGI_API_KEY="${KAGI_API_KEY}" \
   pi-agent
 ```
 
 ## Architecture
 
-- **Dockerfile**: Builds a `node:24-slim` container, creates a `piuser` matching the host's UID/GID, installs the Pi agent globally, and copies default config from `config/`.
-- **`config/settings.json`**: Default agent configuration baked into the image. Sets Ollama as provider, gemma4:e4b as default model, system prompt optimized for small models, and aggressive compaction settings. Overridden at runtime by host's `~/.pi/agent/settings.json` via volume mount.
-- **`@0xkobold/pi-ollama`**: Extension (installed via `packages` in settings.json) that auto-discovers Ollama models. No manual model list needed — just `ollama pull <model>` and it appears.
-- **`--network host`**: Allows the container to reach Ollama on `localhost:11434`.
-- **Volume mounts**: `$(pwd):/workspace` for project files, `$HOME/.pi:/home/piuser/.pi` for persistent agent state/settings/extensions across container restarts.
-- **pi_agent_harness.md**: Design document covering architecture decisions and planned next steps.
+- **Dockerfile**: `node:24-slim` base. Creates `piuser` matching host UID/GID. Installs: Pi agent, extensions (`@0xkobold/pi-ollama`, `@ollama/pi-web-search`), `kagi-cli`, Playwright + Chromium, Mermaid CLI, `scc`, `duckdb`, `sg` (ast-grep). Copies config, tools, and skills into the image.
+- **entrypoint.sh**: Starts Xvfb virtual display, x11vnc, noVNC (port 6080), headed Chromium with CDP (port 9222). Seeds bundled skills into `~/.pi/agent/skills/` on first run (preserves user edits). Then runs `pi`.
+- **install.sh**: Build wizard — builds image, checks Ollama, prompts for Kagi API key, adds/updates shell alias (identified by `# [pi-agent-alias]` marker comment).
+- **config/settings.json**: Default agent config baked into image. Ollama provider, optimized system prompt for small models, aggressive compaction. Overridden at runtime by `~/.pi/agent/settings.json`.
+- **config/skills/**: Bundled skill definitions (browser, ast-grep, duckdb, scc, git-workflow, tdd, diagram, memory, browserbase).
+- **tools/**: Node.js scripts for browser control (`browser.js`, `start-browser.js`), persistent memory (`memory.js`), Mermaid config.
+- **`--network host`**: Required for Ollama access on `localhost:11434`.
+- **Volume mounts**: `$(pwd):/workspace` for project files, `$HOME/.pi:/home/piuser/.pi` for persistent state.
 
 ## Key Design Constraints
 
-- The container user (`piuser`) must match host UID/GID to avoid root-owned file locks on mounted volumes.
-- Local LLM access (Ollama) requires host networking — do not switch to bridge networking without updating Ollama connectivity.
-- Tools must be invoked via JSON tool-calling schemas, not as direct bash commands.
-- Ollama models are auto-discovered by the `@0xkobold/pi-ollama` extension — no manual model list needed.
-- The system prompt in `config/settings.json` is kept short (~150 words) because small local models have limited context windows. It uses explicit RULES and FORBIDDEN sections to prevent common mistakes (e.g., running tool names as bash commands).
-- Compaction is aggressive (reserveTokens: 4096, keepRecentTokens: 8000) to keep 8B models focused.
-- Tool count is limited to 9 (7 built-in + 2 web-search) — more tools degrade small model tool-calling accuracy.
+- Container user (`piuser`) must match host UID/GID to avoid root-owned files.
+- Host networking required for Ollama — do not switch to bridge networking.
+- Extensions must be pre-installed as root in Dockerfile (`npm install -g`) because Pi's runtime package install runs as `piuser` and can't write to global node_modules.
+- Ollama models are auto-discovered by `@0xkobold/pi-ollama` — no manual model list needed.
+- System prompt is kept short (~200 words) for small local models. Uses explicit RULES and FORBIDDEN sections.
+- Compaction is aggressive (reserveTokens: 4096, keepRecentTokens: 8000) for 8B models.
+- The `# [pi-agent-alias]` marker in shell rc files allows `install.sh` to find and update the alias on re-runs.

@@ -1,93 +1,123 @@
 # Pi Coding Agent (Dockerized)
 
-A secure, isolated Docker harness for the [Pi terminal coding agent](https://www.npmjs.com/package/@mariozechner/pi-coding-agent) with Ollama local LLM support and web search.
+A secure, isolated Docker harness for the [Pi terminal coding agent](https://www.npmjs.com/package/@mariozechner/pi-coding-agent) with Ollama local LLM support, Kagi/Ollama web search, live browser control, and bundled coding skills.
 
 ## Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/)
 - [Ollama](https://ollama.com) running on `localhost:11434`
-- At least one model pulled:
-  ```bash
-  ollama pull gemma4:e4b
-  ```
 
-## Quick Start
+## Install
 
 ```bash
-# 1. Build the image (matches your host user to avoid root-owned files)
+git clone https://github.com/kxzl/pi.git && cd pi
+./install.sh
+```
+
+The installer will:
+- Build the Docker image (matching your host UID/GID)
+- Pull a recommended Ollama model if none are installed
+- Optionally configure your Kagi API key for web search
+- Add the `pi` alias to your shell rc file
+
+After install, restart your shell or run `source ~/.bashrc`, then:
+
+```bash
+pi
+```
+
+## Manual Setup
+
+If you prefer not to use the installer:
+
+```bash
+# Build
 docker build --build-arg UID=$(id -u) --build-arg GID=$(id -g) -t pi-agent .
 
-# 2. Add this alias to your ~/.bashrc (one-time)
+# Add to ~/.bashrc
+export KAGI_API_KEY="your-key-here"  # optional
+# [pi-agent-alias]
 alias pi='docker run -it --rm --network host -v "$(pwd):/workspace" -v "$HOME/.pi:/home/piuser/.pi" -e KAGI_API_KEY="${KAGI_API_KEY}" pi-agent'
 
-# 3. Run from any project directory
+# Run
 pi
 ```
 
 ## How It Works
 
-- The container creates a `piuser` matching your host UID/GID so files it writes aren't root-owned
-- `--network host` lets the agent talk to Ollama on `localhost:11434`
-- `$(pwd):/workspace` mounts your current project directory
-- `$HOME/.pi:/home/piuser/.pi` persists settings, sessions, and extensions across runs
+- Container runs as `piuser` matching your host UID/GID — no root-owned files
+- `--network host` connects to Ollama on `localhost:11434`
+- `$(pwd):/workspace` mounts your current project
+- `$HOME/.pi` persists settings, sessions, skills, and extensions across runs
 
 ## Models
 
-The default model is `gemma4:e4b` (8B). Switch interactively with `/model` inside the agent.
+Ollama models are auto-discovered by the `@0xkobold/pi-ollama` extension. Pull any model and it appears in `/model` inside the agent.
 
-| Model | Size | Good For |
-|-------|------|----------|
-| `gemma4:e4b` | 8B | Fast, simple tasks |
-| `glm-4.7-flash` | 30B | Better reasoning, slower |
+```bash
+ollama pull qwen2.5-coder:32b
+```
 
-Ollama models are auto-discovered by the `@0xkobold/pi-ollama` extension. Just pull a model with `ollama pull <model>` and it appears in `/model`.
+Recommended models for coding (16GB VRAM):
 
-## Configuration
+| Model | Params | VRAM | Best For |
+|-------|--------|------|----------|
+| `gemma4:27b` | 26B MoE (4B active) | ~16GB | Agents, function calling |
+| `qwen2.5-coder:32b` | 32B | ~22GB | Code generation, refactoring |
+| `devstral` | 24B | ~15GB | Coding tasks |
+| `qwen3:14b` | 14B | ~9GB | Fast, fits fully in VRAM |
 
-Default config lives in `config/` and is baked into the Docker image. At runtime, the host volume mount (`$HOME/.pi`) overrides it — edit files in `~/.pi/agent/` to customize without rebuilding.
+Switch models interactively with `/model` or set `defaultModel` in `config/settings.json`.
 
-Key settings:
-- `defaultModel` — which Ollama model to use
-- `systemPrompt` — instructions to keep small models on track
-- `compaction` — auto-compresses context to keep small models focused
-- `packages` — extensions to auto-install (currently: Ollama integration + web search)
+## Web Search
+
+Three tiers, fastest first:
+
+1. **Kagi** (`kagi search "query"` via bash) — fast, high quality. Requires `KAGI_API_KEY` ([get one here](https://kagi.com/settings?p=api))
+2. **Ollama web search** (`ollama_web_search` tool) — free, no API key needed
+3. **Live browser** (via `/skill:browser`) — for JS-heavy pages, logins, forms
 
 ## Live Browser
 
-The container runs a headed Chromium browser on a virtual display. Watch it live from your host:
+The container runs headed Chromium on a virtual display. Watch the agent browse in real time:
 
-1. Start the container as usual (`pi`)
+1. Start `pi` as usual
 2. Open **http://localhost:6080/vnc.html** in your host browser
-3. You'll see the Chromium window — it updates in real time as the agent browses
 
-The agent controls the browser via the `bash` tool:
+The agent controls the browser via bash. See `/skill:browser` for full docs.
 
-```bash
-# Navigate to a URL
-node /usr/local/lib/browser.js '{"action":"navigate","url":"https://example.com"}'
+## Skills
 
-# Take a screenshot (saved to /tmp/screenshot.png)
-node /usr/local/lib/browser.js '{"action":"screenshot"}'
+Built-in skills (invoke with `/skill:<name>`):
 
-# Get visible page text
-node /usr/local/lib/browser.js '{"action":"text"}'
-
-# Click an element
-node /usr/local/lib/browser.js '{"action":"click","selector":"button.submit"}'
-
-# Fill an input
-node /usr/local/lib/browser.js '{"action":"fill","selector":"#search","value":"hello"}'
-
-# Run JavaScript
-node /usr/local/lib/browser.js '{"action":"evaluate","script":"document.title"}'
-```
-
-Available actions: `navigate`, `screenshot`, `click`, `fill`, `evaluate`, `text`, `back`, `forward`
+| Skill | Description |
+|-------|-------------|
+| `browser` | Control live Chromium — navigate, click, fill forms, screenshot |
+| `ast-grep` | AST-based semantic code search and rewriting |
+| `duckdb` | SQL queries over CSV/JSON/Parquet files |
+| `scc` | Code statistics (lines, complexity, languages) |
+| `git-workflow` | Branching, commits, PR workflows |
+| `tdd` | Test-driven development workflow |
+| `diagram` | Generate diagrams with Mermaid |
+| `memory` | Persistent key-value memory across sessions |
+| `browserbase` | Cloud browser automation |
 
 ## Tools
 
 Built-in: `read`, `write`, `edit`, `bash`, `grep`, `find`, `ls`
 
-From extensions:
-- `ollama_web_search` — search the web via Ollama
-- `ollama_web_fetch` — fetch and extract page content via Ollama
+Extensions (auto-installed):
+- `ollama_web_search` / `ollama_web_fetch` — web search via Ollama
+- `kagi` CLI — web search via Kagi (requires API key)
+
+CLI tools in container: `scc`, `duckdb`, `sg` (ast-grep), `kagi`
+
+## Configuration
+
+Default config is in `config/settings.json`, baked into the image. At runtime, `~/.pi/agent/settings.json` overrides it (via volume mount).
+
+Key settings:
+- `defaultModel` — which Ollama model to use
+- `systemPrompt` — instructions optimized for small local models
+- `compaction` — auto-compresses context (aggressive defaults for 8B models)
+- `packages` — Pi extensions to load
