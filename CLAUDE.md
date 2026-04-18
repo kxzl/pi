@@ -24,6 +24,7 @@ docker run -it --rm --network host \
 
 - **Dockerfile**: Builds a `node:24-slim` container, creates a `piuser` matching the host's UID/GID, installs the Pi agent globally, and copies default config from `config/`.
 - **`config/settings.json`**: Default agent configuration baked into the image. Sets Ollama as provider, gemma4:e4b as default model, system prompt optimized for small models, and aggressive compaction settings. Overridden at runtime by host's `~/.pi/agent/settings.json` via volume mount.
+- **`config/models.json`**: Ollama provider definition with compat flags (`supportsDeveloperRole: false`, `supportsReasoningEffort: false`). Lists available Ollama models — Pi requires explicit model entries (at minimum `{ "id": "..." }`). Add new models here after pulling them with Ollama.
 - **`--network host`**: Allows the container to reach Ollama on `localhost:11434`.
 - **Volume mounts**: `$(pwd):/workspace` for project files, `$HOME/.pi:/home/piuser/.pi` for persistent agent state/settings/extensions across container restarts.
 - **pi_agent_harness.md**: Design document covering architecture decisions and planned next steps.
@@ -33,7 +34,7 @@ docker run -it --rm --network host \
 - The container user (`piuser`) must match host UID/GID to avoid root-owned file locks on mounted volumes.
 - Local LLM access (Ollama) requires host networking — do not switch to bridge networking without updating Ollama connectivity.
 - Tools must be invoked via JSON tool-calling schemas, not as direct bash commands.
-- Ollama models are auto-discovered by pi — do not hardcode model lists. Only `defaultModel` is set in settings.json.
+- Ollama models must be listed in `config/models.json` — Pi does not auto-discover them. Only `{ "id": "..." }` is required per model.
 - The system prompt in `config/settings.json` is kept short (~150 words) because small local models have limited context windows. It uses explicit RULES and FORBIDDEN sections to prevent common mistakes (e.g., running tool names as bash commands).
 - Compaction is aggressive (reserveTokens: 4096, keepRecentTokens: 8000) to keep 8B models focused.
 - Tool count is limited to 9 (7 built-in + 2 web-search) — more tools degrade small model tool-calling accuracy.

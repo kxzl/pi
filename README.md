@@ -33,19 +33,21 @@ pi
 
 ## Models
 
-The default model is `gemma4:e4b` (8B). All Ollama models are auto-discovered — switch interactively with `/model` inside the agent.
+The default model is `gemma4:e4b` (8B). Switch interactively with `/model` inside the agent.
 
-Recommended models for coding:
 | Model | Size | Good For |
 |-------|------|----------|
 | `gemma4:e4b` | 8B | Fast, simple tasks |
 | `glm-4.7-flash` | 30B | Better reasoning, slower |
 
-Pull additional models with `ollama pull <model>`.
+To add a new Ollama model:
+1. Pull it: `ollama pull <model>`
+2. Add `{ "id": "<model>" }` to the `models` array in `config/models.json`
+3. Rebuild the image, or edit `~/.pi/agent/models.json` directly (no rebuild needed)
 
 ## Configuration
 
-Default config lives in `config/settings.json` and is baked into the Docker image. At runtime, the host volume mount (`$HOME/.pi`) overrides it — edit `~/.pi/agent/settings.json` to customize without rebuilding.
+Default config lives in `config/` and is baked into the Docker image. At runtime, the host volume mount (`$HOME/.pi`) overrides it — edit files in `~/.pi/agent/` to customize without rebuilding.
 
 Key settings:
 - `defaultModel` — which Ollama model to use
