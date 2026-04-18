@@ -12,13 +12,18 @@ RUN userdel -r node || true
 RUN groupadd -g ${GID} piuser && \
     useradd -u ${UID} -g ${GID} -m -s /bin/bash piuser
 
-# Install virtual display and VNC tools for live browser support
+# Install virtual display, VNC tools, and curl for downloading binaries
 RUN apt-get update && apt-get install -y \
     xvfb \
     x11vnc \
     novnc \
     websockify \
+    curl \
     && rm -rf /var/lib/apt/lists/*
+
+# Install SCC (Sloc Cloc and Code) for codebase analysis — x86_64 Linux binary
+RUN curl -sSL https://github.com/boyter/scc/releases/download/v3.3.5/scc_Linux_x86_64.tar.gz \
+    | tar xz -C /usr/local/bin/ scc
 
 # Install the Pi coding agent globally (as root so it goes to /usr/local/bin)
 RUN npm install -g @mariozechner/pi-coding-agent
@@ -32,6 +37,11 @@ RUN npm install -g playwright && \
     playwright install --with-deps chromium && \
     chmod -R 755 /opt/playwright-browsers
 
+# Install Mermaid CLI for diagram rendering.
+# PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD prevents a redundant Chromium download
+# since the browser is already in PLAYWRIGHT_BROWSERS_PATH above.
+RUN PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install -g @mermaid-js/mermaid-cli
+
 # Copy default config (host volume mount overrides at runtime)
 RUN mkdir -p /home/piuser/.pi/agent
 COPY --chown=piuser:piuser config/settings.json /home/piuser/.pi/agent/settings.json
@@ -39,6 +49,8 @@ COPY --chown=piuser:piuser config/settings.json /home/piuser/.pi/agent/settings.
 # Copy browser tools and startup script
 COPY tools/browser.js /usr/local/lib/browser.js
 COPY tools/start-browser.js /usr/local/lib/start-browser.js
+COPY tools/memory.js /usr/local/lib/memory.js
+COPY tools/mmdc-config.json /usr/local/lib/mmdc-config.json
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
