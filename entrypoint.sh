@@ -28,4 +28,15 @@ check();
 " && echo "Live browser: http://localhost:6080/vnc.html" \
   || echo "Warning: browser CDP not ready; browser tool may fail"
 
+# Seed bundled skills into ~/.pi/agent/skills/ on first run.
+# Only copies skills that don't already exist, so user edits are preserved.
+for skill_src in /usr/local/share/pi-skills/*/; do
+  skill_name=$(basename "$skill_src")
+  skill_dest="/home/piuser/.pi/agent/skills/$skill_name"
+  if [ ! -d "$skill_dest" ]; then
+    mkdir -p "$skill_dest"
+    cp -r "$skill_src"* "$skill_dest/"
+  fi
+done
+
 exec pi "$@"

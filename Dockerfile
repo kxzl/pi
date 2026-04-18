@@ -42,6 +42,9 @@ COPY tools/start-browser.js /usr/local/lib/start-browser.js
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
+# Store bundled skills in a fixed image path (entrypoint seeds them into ~/.pi at runtime)
+COPY config/skills/ /usr/local/share/pi-skills/
+
 # Switch away from root to your matched user
 USER piuser
 WORKDIR /workspace
