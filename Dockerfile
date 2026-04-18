@@ -18,7 +18,6 @@ RUN npm install -g @mariozechner/pi-coding-agent
 # Copy default config (host volume mount overrides at runtime)
 RUN mkdir -p /home/piuser/.pi/agent
 COPY --chown=piuser:piuser config/settings.json /home/piuser/.pi/agent/settings.json
-COPY --chown=piuser:piuser config/models.json /home/piuser/.pi/agent/models.json
 
 # Switch away from root to your matched user!
 USER piuser

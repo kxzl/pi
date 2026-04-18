@@ -18,7 +18,7 @@ A secure, isolated Docker harness for the [Pi terminal coding agent](https://www
 docker build --build-arg UID=$(id -u) --build-arg GID=$(id -g) -t pi-agent .
 
 # 2. Add this alias to your ~/.bashrc (one-time)
-alias pi='docker run -it --rm --network host -v "$(pwd):/workspace" -v "$HOME/.pi:/home/piuser/.pi" -e ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY}" pi-agent'
+alias pi='docker run -it --rm --network host -v "$(pwd):/workspace" -v "$HOME/.pi:/home/piuser/.pi" pi-agent'
 
 # 3. Run from any project directory
 pi
@@ -40,10 +40,7 @@ The default model is `gemma4:e4b` (8B). Switch interactively with `/model` insid
 | `gemma4:e4b` | 8B | Fast, simple tasks |
 | `glm-4.7-flash` | 30B | Better reasoning, slower |
 
-To add a new Ollama model:
-1. Pull it: `ollama pull <model>`
-2. Add `{ "id": "<model>" }` to the `models` array in `config/models.json`
-3. Rebuild the image, or edit `~/.pi/agent/models.json` directly (no rebuild needed)
+Ollama models are auto-discovered by the `@0xkobold/pi-ollama` extension. Just pull a model with `ollama pull <model>` and it appears in `/model`.
 
 ## Configuration
 
@@ -53,7 +50,7 @@ Key settings:
 - `defaultModel` — which Ollama model to use
 - `systemPrompt` — instructions to keep small models on track
 - `compaction` — auto-compresses context to keep small models focused
-- `packages` — extensions to auto-install (currently: web search)
+- `packages` — extensions to auto-install (currently: Ollama integration + web search)
 
 ## Tools
 

@@ -9,6 +9,6 @@
     "reserveTokens": 4096,
     "keepRecentTokens": 8000
   },
-  "packages": ["npm:@ollama/pi-web-search"],
+  "packages": ["npm:@0xkobold/pi-ollama", "npm:@ollama/pi-web-search"],
   "quietStartup": true
 }
