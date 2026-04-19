@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Custom Dockerized harness for the [Pi terminal coding agent](https://www.npmjs.com/package/@mariozechner/pi-coding-agent) (`@mariozechner/pi-coding-agent`). Provides a secure container with Ollama local LLM support, Kagi/Ollama web search, live Chromium browser, and bundled coding skills.
+Custom Dockerized harness for the [Pi terminal coding agent](https://www.npmjs.com/package/@mariozechner/pi-coding-agent) (`@mariozechner/pi-coding-agent`). Provides a secure container with Ollama local LLM support, Kagi web search, live Chromium browser, and bundled coding skills.
 
 ## Build & Run
 
@@ -23,7 +23,7 @@ docker run -it --rm --network host \
 
 ## Architecture
 
-- **Dockerfile**: `node:24-slim` base. Creates `piuser` matching host UID/GID. Installs: Pi agent, extensions (`@0xkobold/pi-ollama`, `@ollama/pi-web-search`), `kagi-cli`, Playwright + Chromium, Mermaid CLI, `scc`, `duckdb`, `sg` (ast-grep). Copies config, tools, and skills into the image.
+- **Dockerfile**: `node:24-slim` base. Creates `piuser` matching host UID/GID. Installs: Pi agent, extension (`@0xkobold/pi-ollama`), `kagi-cli`, Playwright + Chromium, Mermaid CLI, `scc`, `duckdb`, `sg` (ast-grep). Copies config, tools, and skills into the image.
 - **entrypoint.sh**: Starts Xvfb virtual display, x11vnc, noVNC (port 6080), headed Chromium with CDP (port 9222). Seeds bundled skills into `~/.pi/agent/skills/` on first run (preserves user edits). Then runs `pi`.
 - **install.sh**: Build wizard — builds image, checks Ollama, prompts for Kagi API key, adds/updates shell alias (identified by `# [pi-agent-alias]` marker comment).
 - **config/settings.json**: Default agent config baked into image. Ollama provider, optimized system prompt for small models, aggressive compaction. Overridden at runtime by `~/.pi/agent/settings.json`.

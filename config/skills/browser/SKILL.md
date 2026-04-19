@@ -14,9 +14,9 @@ Controls the headed Chromium browser in this container. The session is always vi
 browser({"action": "navigate", "url": "https://example.com"})
 ```
 
-**RIGHT** — use the bash tool with this command:
+**RIGHT** — use the bash tool with simple arguments:
 ```bash
-node /usr/local/lib/browser.js '{"action":"navigate","url":"https://example.com"}'
+node /usr/local/lib/browser.js navigate https://example.com
 ```
 
 All actions return JSON with `{"ok": true, ...}` on success or `{"ok": false, "error": "..."}` on failure.
@@ -26,55 +26,56 @@ All actions return JSON with `{"ok": true, ...}` on success or `{"ok": false, "e
 ### navigate
 Go to a URL. Waits for `DOMContentLoaded`.
 ```bash
-node /usr/local/lib/browser.js '{"action":"navigate","url":"https://example.com"}'
+node /usr/local/lib/browser.js navigate https://example.com
 # → {"ok":true,"title":"Example Domain","url":"https://example.com/"}
 ```
 
 ### text
 Get visible page text (up to 5000 chars). Optionally scope to a CSS selector.
 ```bash
-node /usr/local/lib/browser.js '{"action":"text"}'
-node /usr/local/lib/browser.js '{"action":"text","selector":"#main-content"}'
+node /usr/local/lib/browser.js text
+node /usr/local/lib/browser.js text "#main-content"
 # → {"ok":true,"text":"..."}
 ```
 
 ### screenshot
 Save a PNG of the current page. Default path: `/tmp/screenshot.png`.
 ```bash
-node /usr/local/lib/browser.js '{"action":"screenshot"}'
-node /usr/local/lib/browser.js '{"action":"screenshot","path":"/workspace/page.png"}'
+node /usr/local/lib/browser.js screenshot
+node /usr/local/lib/browser.js screenshot /workspace/page.png
 # → {"ok":true,"saved":"/tmp/screenshot.png"}
 ```
 
 ### click
 Click an element by CSS selector. Waits for the element to be visible.
 ```bash
-node /usr/local/lib/browser.js '{"action":"click","selector":"button[type=\"submit\"]"}'
-node /usr/local/lib/browser.js '{"action":"click","selector":"a[href*=\"login\"]"}'
+node /usr/local/lib/browser.js click "button[type=submit]"
+node /usr/local/lib/browser.js click "a.login-link"
 # → {"ok":true,"url":"https://example.com/next-page"}
 ```
 
 ### fill
-Fill an input field. Clears the field first.
+Fill an input field. Clears the field first. Takes selector then value as separate arguments.
 ```bash
-node /usr/local/lib/browser.js '{"action":"fill","selector":"#username","value":"admin"}'
-node /usr/local/lib/browser.js '{"action":"fill","selector":"input[name=\"q\"]","value":"search term"}'
+node /usr/local/lib/browser.js fill "#username" "admin"
+node /usr/local/lib/browser.js fill "input[name=q]" "search term"
 # → {"ok":true}
 ```
 
 ### evaluate
 Run arbitrary JavaScript in the page context and return the result.
 ```bash
-node /usr/local/lib/browser.js '{"action":"evaluate","script":"document.title"}'
-node /usr/local/lib/browser.js '{"action":"evaluate","script":"[...document.querySelectorAll(\"h2\")].map(e=>e.innerText)"}'
+node /usr/local/lib/browser.js evaluate 'document.title'
+node /usr/local/lib/browser.js evaluate '[...document.querySelectorAll("h2")].map(e=>e.innerText)'
+node /usr/local/lib/browser.js evaluate 'document.querySelectorAll("a").length'
 # → {"ok":true,"result": ...}
 ```
 
 ### back / forward
 Navigate browser history.
 ```bash
-node /usr/local/lib/browser.js '{"action":"back"}'
-node /usr/local/lib/browser.js '{"action":"forward"}'
+node /usr/local/lib/browser.js back
+node /usr/local/lib/browser.js forward
 # → {"ok":true,"url":"https://example.com/previous"}
 ```
 
@@ -82,42 +83,43 @@ node /usr/local/lib/browser.js '{"action":"forward"}'
 
 ### Scrape a page
 ```bash
-node /usr/local/lib/browser.js '{"action":"navigate","url":"https://target.com/page"}'
-node /usr/local/lib/browser.js '{"action":"text"}'
+node /usr/local/lib/browser.js navigate https://target.com/page
+node /usr/local/lib/browser.js text
 # or for structured data:
-node /usr/local/lib/browser.js '{"action":"evaluate","script":"[...document.querySelectorAll(\".item\")].map(e=>e.innerText)"}'
+node /usr/local/lib/browser.js evaluate '[...document.querySelectorAll(".item")].map(e=>e.innerText)'
 ```
 
 ### Submit a form
 ```bash
-node /usr/local/lib/browser.js '{"action":"navigate","url":"https://site.com/form"}'
-node /usr/local/lib/browser.js '{"action":"fill","selector":"#name","value":"John"}'
-node /usr/local/lib/browser.js '{"action":"fill","selector":"#email","value":"john@example.com"}'
-node /usr/local/lib/browser.js '{"action":"click","selector":"button[type=\"submit\"]"}'
-node /usr/local/lib/browser.js '{"action":"text"}'
+node /usr/local/lib/browser.js navigate https://site.com/form
+node /usr/local/lib/browser.js fill "#name" "John"
+node /usr/local/lib/browser.js fill "#email" "john@example.com"
+node /usr/local/lib/browser.js click "button[type=submit]"
+node /usr/local/lib/browser.js text
 ```
 
 ### Login then act
 ```bash
-node /usr/local/lib/browser.js '{"action":"navigate","url":"https://site.com/login"}'
-node /usr/local/lib/browser.js '{"action":"fill","selector":"#username","value":"myuser"}'
-node /usr/local/lib/browser.js '{"action":"fill","selector":"#password","value":"mypass"}'
-node /usr/local/lib/browser.js '{"action":"click","selector":"button[type=\"submit\"]"}'
+node /usr/local/lib/browser.js navigate https://site.com/login
+node /usr/local/lib/browser.js fill "#username" "myuser"
+node /usr/local/lib/browser.js fill "#password" "mypass"
+node /usr/local/lib/browser.js click "button[type=submit]"
 # session cookie is now set — navigate freely
-node /usr/local/lib/browser.js '{"action":"navigate","url":"https://site.com/dashboard"}'
-node /usr/local/lib/browser.js '{"action":"text"}'
+node /usr/local/lib/browser.js navigate https://site.com/dashboard
+node /usr/local/lib/browser.js text
 ```
 
 ### Inspect what's on screen
 ```bash
-node /usr/local/lib/browser.js '{"action":"screenshot"}'
+node /usr/local/lib/browser.js screenshot
 # read the file to understand the current page state
 read /tmp/screenshot.png
 ```
 
 ## Tips
 
-- **Selector not found?** Use `evaluate` to inspect the DOM: `{"action":"evaluate","script":"document.body.innerHTML.slice(0,2000)"}`
+- **Selector not found?** Use `evaluate` to inspect the DOM: `node /usr/local/lib/browser.js evaluate 'document.body.innerHTML.slice(0,2000)'`
 - **Page not loaded yet?** Call `navigate` again to retry, or use `evaluate` with `document.readyState`
 - **Text truncated?** Use `evaluate` with a targeted query to extract only what you need
 - **Cookies persist** for the life of the container — log in once, stay logged in
+- **Shell quoting tip:** Use single quotes around JavaScript with double quotes inside: `'[...document.querySelectorAll("a")].map(e=>e.href)'`

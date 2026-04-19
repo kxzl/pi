@@ -41,6 +41,18 @@ for skill_src in /usr/local/share/pi-skills/*/; do
   fi
 done
 
+# ── Seed bundled prompts ────────────────────────────────────────────────────
+
+mkdir -p /home/piuser/.pi/agent/prompts
+for prompt_src in /usr/local/share/pi-prompts/*.md; do
+  [ -f "$prompt_src" ] || continue
+  prompt_name=$(basename "$prompt_src")
+  prompt_dest="/home/piuser/.pi/agent/prompts/$prompt_name"
+  if [ ! -f "$prompt_dest" ]; then
+    cp "$prompt_src" "$prompt_dest"
+  fi
+done
+
 # ── Banner ──────────────────────────────────────────────────────────────────
 
 # Collect skill names from seeded skills directory
@@ -50,6 +62,16 @@ if [ -d "$HOME/.pi/agent/skills" ]; then
     [ -d "$s" ] || continue
     name=$(basename "$s")
     SKILLS="${SKILLS}  /skill:${name}\n"
+  done
+fi
+
+# Collect prompt names from seeded prompts directory
+PROMPTS=""
+if [ -d "$HOME/.pi/agent/prompts" ]; then
+  for p in "$HOME/.pi/agent/prompts"/*.md; do
+    [ -f "$p" ] || continue
+    name=$(basename "$p" .md)
+    PROMPTS="${PROMPTS}  /${name}\n"
   done
 fi
 
@@ -74,11 +96,17 @@ echo "  \"${QUOTE}\""
 
 echo ""
 echo "  Tools:  read, write, edit, bash, grep, find, ls"
-echo "          ollama_web_search, ollama_web_fetch"
+echo "          kagi search (via bash), browser.js (via bash)"
 echo ""
 echo "  Skills:"
 if [ -n "$SKILLS" ]; then
   echo -e "$SKILLS"
+else
+  echo "    (none found)"
+fi
+echo "  Prompts:"
+if [ -n "$PROMPTS" ]; then
+  echo -e "$PROMPTS"
 else
   echo "    (none found)"
 fi

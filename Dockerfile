@@ -44,7 +44,7 @@ RUN curl -sSL https://github.com/ast-grep/ast-grep/releases/download/0.42.1/app-
 RUN npm install -g kagi-cli
 
 # Install the Pi coding agent and extensions globally (as root)
-RUN npm install -g @mariozechner/pi-coding-agent @0xkobold/pi-ollama @ollama/pi-web-search
+RUN npm install -g @mariozechner/pi-coding-agent @0xkobold/pi-ollama
 
 # Install Playwright and download Chromium with all required system dependencies.
 # PLAYWRIGHT_BROWSERS_PATH puts binaries in a world-readable location.
@@ -72,8 +72,13 @@ COPY tools/mmdc-config.json /usr/local/lib/mmdc-config.json
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Store bundled skills in a fixed image path (entrypoint seeds them into ~/.pi at runtime)
+# Store bundled skills and prompts in fixed image paths (entrypoint seeds them into ~/.pi at runtime)
 COPY config/skills/ /usr/local/share/pi-skills/
+COPY config/prompts/ /usr/local/share/pi-prompts/
+
+# Allow piuser to install global npm packages at runtime
+# Only chown the top-level dirs (not -R) so npm can create new package folders
+RUN chown piuser:piuser /usr/local/lib/node_modules /usr/local/bin
 
 # Switch away from root to your matched user
 USER piuser

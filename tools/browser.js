@@ -2,28 +2,73 @@
 // Browser control tool for the Pi agent.
 //
 // Usage (via bash tool):
-//   node /usr/local/lib/browser.js '<json>'
 //
-// Modes:
-//   headed (default)  — connects to the live VNC browser via CDP
-//   headless          — launches a silent browser (add "headless": true to any command)
+//   Simple CLI format (recommended — avoids shell quoting issues):
+//     node /usr/local/lib/browser.js navigate https://example.com
+//     node /usr/local/lib/browser.js text
+//     node /usr/local/lib/browser.js text "#main-content"
+//     node /usr/local/lib/browser.js click "button.submit"
+//     node /usr/local/lib/browser.js fill "#email" "user@example.com"
+//     node /usr/local/lib/browser.js evaluate 'document.title'
+//     node /usr/local/lib/browser.js screenshot /tmp/shot.png
+//     node /usr/local/lib/browser.js back
+//     node /usr/local/lib/browser.js forward
+//
+//   JSON format (still supported):
+//     node /usr/local/lib/browser.js '{"action":"navigate","url":"https://example.com"}'
 //
 // Actions:
-//   navigate  {url}                  Go to URL, returns title + url
-//   screenshot {path?}               Save PNG (default /tmp/screenshot.png)
-//   click     {selector}             Click element by CSS selector
-//   fill      {selector, value}      Fill an input field
-//   evaluate  {script}               Run JavaScript, return result
-//   text      {selector?}            Get page text or element text (max 5000 chars)
-//   back      {}                     Navigate back
-//   forward   {}                     Navigate forward
+//   navigate  <url>                  Go to URL, returns title + url
+//   screenshot [path]                Save PNG (default /tmp/screenshot.png)
+//   click     <selector>             Click element by CSS selector
+//   fill      <selector> <value>     Fill an input field
+//   evaluate  <script>               Run JavaScript, return result
+//   text      [selector]             Get page text or element text (max 5000 chars)
+//   back                             Navigate back
+//   forward                          Navigate forward
 
 const { chromium } = require('playwright');
 
 const HEADLESS_PROFILE = '/home/piuser/.pi/browser-headless-profile';
 
+// Parse command: try JSON first, fall back to simple CLI args
+function parseCommand(argv) {
+  const args = argv.slice(2);
+  if (args.length === 0) return {};
+
+  // If first arg looks like JSON, parse it
+  if (args[0].startsWith('{')) {
+    const parsed = JSON.parse(args[0]);
+    // Accept both "script" and "code" for evaluate
+    if (parsed.code && !parsed.script) parsed.script = parsed.code;
+    return parsed;
+  }
+
+  // Simple CLI format: action [arg1] [arg2]
+  const action = args[0];
+  switch (action) {
+    case 'navigate':
+      return { action, url: args[1] };
+    case 'text':
+      return { action, selector: args[1] || undefined };
+    case 'screenshot':
+      return { action, path: args[1] || undefined };
+    case 'click':
+      return { action, selector: args[1] };
+    case 'fill':
+      return { action, selector: args[1], value: args[2] };
+    case 'evaluate':
+      return { action, script: args[1] };
+    case 'back':
+    case 'forward':
+      return { action };
+    default:
+      return { action };
+  }
+}
+
 async function run() {
-  const cmd = JSON.parse(process.argv[2] || '{}');
+  const cmd = parseCommand(process.argv);
   const headless = !!cmd.headless;
 
   let cleanup;
@@ -49,7 +94,7 @@ async function run() {
     }
     const allPages = browser.contexts().flatMap(c => c.pages());
     page = allPages.length > 0 ? allPages[allPages.length - 1] : await browser.newPage();
-    cleanup = () => browser.disconnect();
+    cleanup = () => browser.close();
   }
 
   let result;
