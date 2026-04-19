@@ -15,10 +15,12 @@ git clone https://github.com/kxzl/pi.git && cd pi
 ```
 
 The installer will:
+- Ask for your Ollama host URL (default: `localhost`, or a remote IP)
 - Build the Docker image (matching your host UID/GID)
 - Pull a recommended Ollama model if none are installed
 - Optionally configure your Kagi API key for web search
-- Add the `pi` alias to your shell rc file
+- Add the `pi` alias and `OLLAMA_HOST` export to your shell rc file
+- Generate a `.env` file for docker-compose
 
 After install, restart your shell or run `source ~/.bashrc`, then:
 
@@ -41,6 +43,41 @@ alias pi='docker run -it --rm --network host -v "$(pwd):/workspace" -v "$HOME/.p
 
 # Run
 pi
+```
+
+## Remote Ollama
+
+Run Pi on a laptop while Ollama stays on a more powerful desktop or server.
+
+**On the machine running Ollama** — allow connections from the network:
+```bash
+OLLAMA_HOST=0.0.0.0 ollama serve
+```
+
+**On the machine running Pi** — point to the remote host:
+```bash
+# Option A: set once in your shell rc
+export OLLAMA_HOST=http://192.168.1.x:11434
+
+# Option B: override for a single session
+OLLAMA_HOST=http://192.168.1.x:11434 pi
+```
+
+Or run `./install.sh` and enter the remote IP when prompted — it writes `OLLAMA_HOST` to your shell rc and `.env` automatically.
+
+## Docker Compose
+
+An alternative to the shell alias:
+
+```bash
+cp .env.example .env   # edit OLLAMA_HOST (and optionally KAGI_API_KEY)
+docker compose build
+docker compose run --rm pi
+```
+
+Override the host for a single session without editing `.env`:
+```bash
+OLLAMA_HOST=http://192.168.1.x:11434 docker compose run --rm pi
 ```
 
 ## How It Works
