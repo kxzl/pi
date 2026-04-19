@@ -1,0 +1,29 @@
+# Pi Agent — Docker Compose
+#
+# Usage:
+#   docker compose run --rm pi              # interactive session
+#   docker compose build                    # rebuild image
+#
+# Configuration: copy .env.example to .env and edit before first run.
+#   cp .env.example .env
+#
+# Override Ollama host for a single session:
+#   OLLAMA_HOST=http://192.168.1.x:11434 docker compose run --rm pi
+
+services:
+  pi:
+    build:
+      context: .
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    image: pi-agent
+    network_mode: host
+    volumes:
+      - .:/workspace
+      - ${HOME}/.pi:/home/piuser/.pi
+    environment:
+      OLLAMA_HOST: ${OLLAMA_HOST:-http://localhost:11434}
+      KAGI_API_KEY: ${KAGI_API_KEY:-}
+    stdin_open: true
+    tty: true

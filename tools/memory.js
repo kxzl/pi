@@ -20,7 +20,7 @@ const path = require('path');
 const MEMORY_DIR  = '/home/piuser/.pi/memory';
 const MEMORY_FILE = path.join(MEMORY_DIR, 'index.json');
 const EMBED_MODEL = process.env.MEMORY_EMBED_MODEL || 'nomic-embed-text';
-const OLLAMA_URL  = process.env.OLLAMA_URL || 'http://localhost:11434';
+const OLLAMA_URL  = process.env.OLLAMA_HOST || process.env.OLLAMA_URL || 'http://localhost:11434';
 
 function load() {
   try {
