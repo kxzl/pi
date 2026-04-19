@@ -1,6 +1,10 @@
 # Pi Coding Agent (Dockerized)
 
-A secure, isolated Docker harness for the [Pi terminal coding agent](https://www.npmjs.com/package/@mariozechner/pi-coding-agent) with Ollama local LLM support, Kagi/Ollama web search, live browser control, and bundled coding skills.
+My opinionated build of Mario Zechner's [Pi coding agent](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent).
+
+The whole idea is to use Ollama local models as much as possible and give them enough tooling to actually be useful, even when they're not the sharpest. It's also wrapped in Docker because dumb agents will do dumb things and you really want them in a sandbox when that happens. Let them trash a container, not your home directory.
+
+Mostly this is a learning project for me. Figuring out how agent tooling works, what makes local models fall over, and how to build guardrails that actually help. If you find it useful too, cool.
 
 ## Prerequisites
 
